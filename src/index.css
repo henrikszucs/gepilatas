@@ -1,0 +1,71 @@
+body {
+	background: #ece9d8;
+}
+
+/* header */
+.title {
+	text-align: center;
+	color: #FF6F00;
+}
+.status {
+	text-align: center;
+	font-size: 150%;
+}
+
+/* display */
+.video {
+	clear: both;
+	display: inline-block;
+	min-width: 660px;
+	width: 60%;
+	height: 580px;
+}
+
+.video video {
+	clear: both;
+	display: block;
+	margin: 10px;
+	background: #000000;
+	width: 640px;
+	height: 480px;
+}
+
+button {
+	padding: 10px;
+	float: left;
+	margin: 5px 3px 5px 10px;
+}
+
+.removed {
+	display: none;
+}
+
+/* shopping cart */
+.cart {
+	width: calc(40% - 5px);
+	display: inline-block;
+	vertical-align: top;
+	text-align: center;
+}
+
+.cart table {
+	font-family: arial, sans-serif;
+	border-collapse: collapse;
+	width: 100%;
+}
+  
+.cart  td, th {
+	border: 1px solid #dddddd;
+	text-align: left;
+	padding: 8px;
+}
+  
+.cart tr:nth-child(even) {
+	background-color: #dddddd;
+}
+
+.cart button {
+	display: block;
+	width: 40px;
+    height: 40px;
+}
