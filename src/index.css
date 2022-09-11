@@ -43,6 +43,7 @@ button {
 /* shopping cart */
 .cart {
 	width: calc(40% - 5px);
+	min-width: 460px;
 	display: inline-block;
 	vertical-align: top;
 	text-align: center;
@@ -54,7 +55,7 @@ button {
 	width: 100%;
 }
   
-.cart  td, th {
+.cart td, th {
 	border: 1px solid #dddddd;
 	text-align: left;
 	padding: 8px;
