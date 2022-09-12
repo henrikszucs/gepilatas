@@ -141,7 +141,7 @@
 				}
 			}
 			if (cameraEl.childNodes.length > 1) {
-				setVideo(cameraEl.childNodes[1].value);
+				await setVideo(cameraEl.childNodes[1].value);
 			}
 		} catch (error) {
 			console.log(error);
@@ -150,7 +150,7 @@
 	const setVideo = async (id) => {
 		const cameras = document.getElementById("cameras");
 		let i = 0, length = cameras.length;
-		while (i < cameras.length && cameras.options[i].value === id) {
+		while (i < length && cameras.options[i].value === id) {
 			i++;
 		}
 		if (i >= cameras.length) {
@@ -187,7 +187,7 @@
 		navigator.mediaDevices.addEventListener("devicechange", listVideo);
 		const oldDeviceId = localStorage.getItem("deviceId");
 		await listVideo();
-		setVideo(oldDeviceId);
+		await setVideo(oldDeviceId);
 		document.getElementById("cameras").addEventListener("change", (e) => {
 			setVideo(e.target.value);
 		});
