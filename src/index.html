@@ -14,14 +14,16 @@
 	</head>
 	<body>
 		<h1 class="title">Okos kassza</h1>
-		<p class="status">Állapot: <span id="status">Awaiting TF.js load</p>
+		<p class="status">Állapot: <span id="status">TF.js betöltése...</p>
+		<p class="error"></p>
 		<div class="video">
 			<video id="webcam" autoplay muted></video>
-			<button id="enableCam">Enable Webcam</button>
-			<button class="dataCollector" data-1hot="0" data-name="Class 1">Gather Class 1 Data</button>
-			<button class="dataCollector" data-1hot="1" data-name="Class 2">Gather Class 2 Data</button>
-			<button id="train">Train &amp; Predict!</button>
-			<button id="reset">Reset</button>
+			<select id="cameras">
+				<!--<option value="sadsda">Camera 1</option>
+				<option value="sadsdad2">Camera 2</option>
+				<option value="gsdfds">Camera 3</option>-->
+			</select>
+			<button id="enableCam">Reset Cart</button>
 		</div>
 		<div class="cart">
 			<table>

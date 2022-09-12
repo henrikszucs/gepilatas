@@ -11,6 +11,11 @@ body {
 	text-align: center;
 	font-size: 150%;
 }
+.error {
+	text-align: center;
+	font-size: 150%;
+	color: #ff0000;
+}
 
 /* display */
 .video {
@@ -28,6 +33,12 @@ body {
 	background: #000000;
 	width: 640px;
 	height: 480px;
+}
+
+select {
+	padding: 10px;
+	float: left;
+	margin: 5px 3px 5px 10px;
 }
 
 button {

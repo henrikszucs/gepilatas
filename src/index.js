@@ -1,5 +1,6 @@
 "use strict";
 {
+	//Cart managing
 	/*
 	{
 		"Product": {
@@ -9,6 +10,13 @@
 			"htmlRef": object
 		}
 	}
+	setProduct(name:string, count:integer, price:integer (optional), unit:string (optional));
+	true / false
+	addProduct(name:string, count:integer);
+	true / false
+
+	setProduct("Sajt", 1, 1655, "db");
+	setProduct("Kenyér", 1, 580, "db");
 	*/
 	const CURRENCY = "Ft";
 	const cart = {};
@@ -17,7 +25,7 @@
 			return false;
 		}
 		if (typeof cart[name] === "undefined") {
-			if (typeof price === "undefined" || typeof unit === "undefined" || count === 0) {
+			if (typeof price === "undefined" || typeof unit === "undefined" || count <= 0) {
 				return false;
 			}
 			cart[name] = {
@@ -73,7 +81,7 @@
 			console.log();
 			document.getElementById("cart").appendChild(tr);
 		} else {
-			if (count === 0) {
+			if (count <= 0) {
 				cart[name]["htmlRef"].remove();
 				delete cart[name];
 				return true;
@@ -101,12 +109,81 @@
 		setProduct(name, cart[name]["count"] + count);
 	}
 
+	//Video managing
+	const listVideo = async () => {
+		try {
+			const stream = await navigator.mediaDevices.getUserMedia({
+				"audio": false,
+				"video": {
+					"width": 640,
+					"height": 480
+				}
+			});
+			stream.getTracks()[0].stop();
+			const list = await navigator.mediaDevices.enumerateDevices();
+			const cameraEl = document.getElementById("cameras");
+			cameraEl.innerHTML = "";
+			const optionNo = document.createElement("option");
+			optionNo.setAttribute("value", "");
+			optionNo.innerText = "Nincs kamera";
+			cameraEl.appendChild(optionNo);
+			for (let i = 0, length = list.length; i < length; i++) {
+				if (list[i]["kind"] === "videoinput") {
+					const option = document.createElement("option");
+					option.setAttribute("value", list[i]["deviceId"]);
+					if (list[i]["label"].length > 20) {
+						option.innerText = list[i]["label"].substring(0, 20) + "...";
+					} else {
+						option.innerText = list[i]["label"]
+					}
+					cameraEl.appendChild(option);
+				}
+			}
+			if (cameraEl.childNodes.length > 1) {
+				startVideo(cameraEl.childNodes[1].value);
+			}
+		} catch (error) {
+			console.log(error);
+		}
+	};
+	let VIDEO;
+	const startVideo = async (id) => {
+		document.getElementById("cameras").value = id;
+		VIDEO = document.getElementById("webcam");
+		if (VIDEO.srcObject !== null) {
+			VIDEO.srcObject.getTracks()[0].stop();
+		}
+		if (id !== "") {
+			try {
+				VIDEO.srcObject = await navigator.mediaDevices.getUserMedia({
+					"audio": false,
+					"video": {
+						"deviceId": id,
+						"width": 640,
+						"height": 480
+					  }
+				});
+			} catch (error) {
+				console.log(error);
+			}
+		}
+	};
+	const videoStart = async () => {
+		if (typeof navigator.mediaDevices === "undefined") {
+			document.getElementById("error").innerHTML = "Böngésző nem támogatott";
+			return false;
+		}
+		navigator.mediaDevices.addEventListener("devicechange", listVideo);
+		await listVideo();
+		document.getElementById("cameras").addEventListener("change", (e) => {
+			startVideo(e.target.value);
+		});
+		return true;
+	}
 
-	window.addEventListener("load", function() {
-		setProduct("Sajt", 2, 100, "db");
-		setProduct("Sajt", 20, 100, "db");
-		setProduct("Sajt", 20, 1000, "db");
-		addProduct("Sajt", 2);
+	//Starting
+	window.addEventListener("load", async () => {
+		await videoStart();
 	});
 };
 
