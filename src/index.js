@@ -10,10 +10,9 @@
 			"htmlRef": object
 		}
 	}
-	setProduct(name:string, count:integer, price:integer (optional), unit:string (optional));
-	true / false
-	addProduct(name:string, count:integer);
-	true / false
+	setProduct: (name: string, count: integer, price: integer, unit: string) => boolean
+	setProduct: (name: string, count: integer) => boolean
+	addProduct: (name: string, count: integer) => boolean
 
 	setProduct("Sajt", 1, 1655, "db");
 	setProduct("Kenyér", 1, 580, "db");
@@ -107,6 +106,7 @@
 			return false;
 		}
 		setProduct(name, cart[name]["count"] + count);
+		return true;
 	}
 
 	//Video managing
@@ -144,8 +144,9 @@
 				await setVideo(cameraEl.childNodes[1].value);
 			}
 		} catch (error) {
-			console.log(error);
+			return false;
 		}
+		return true;
 	};
 	const setVideo = async (id) => {
 		const cameras = document.getElementById("cameras");
@@ -179,7 +180,7 @@
 		}
 		return true;
 	};
-	const videoStart = async () => {
+	const startVideo = async () => {
 		if (!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)) {
 			document.getElementById("error").innerHTML = "Böngésző nem támogatott";
 			return false;
@@ -196,7 +197,7 @@
 
 	//Starting
 	window.addEventListener("load", async () => {
-		await videoStart();
+		await startVideo();
 	});
 };
 
