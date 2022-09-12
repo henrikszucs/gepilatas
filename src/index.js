@@ -110,6 +110,7 @@
 	}
 
 	//Video managing
+	let VIDEO;
 	const listVideo = async () => {
 		try {
 			const stream = await navigator.mediaDevices.getUserMedia({
@@ -140,15 +141,23 @@
 				}
 			}
 			if (cameraEl.childNodes.length > 1) {
-				startVideo(cameraEl.childNodes[1].value);
+				setVideo(cameraEl.childNodes[1].value);
 			}
 		} catch (error) {
 			console.log(error);
 		}
 	};
-	let VIDEO;
-	const startVideo = async (id) => {
-		document.getElementById("cameras").value = id;
+	const setVideo = async (id) => {
+		const cameras = document.getElementById("cameras");
+		let i = 0, length = cameras.length;
+		while (i < cameras.length && cameras.options[i].value === id) {
+			i++;
+		}
+		if (i >= cameras.length) {
+			return false;
+		}
+		localStorage.setItem("deviceId", id);
+		cameras.value = id;
 		VIDEO = document.getElementById("webcam");
 		if (VIDEO.srcObject !== null) {
 			VIDEO.srcObject.getTracks()[0].stop();
@@ -164,19 +173,23 @@
 					  }
 				});
 			} catch (error) {
-				console.log(error);
+				console.error(error);
+				return false;
 			}
 		}
+		return true;
 	};
 	const videoStart = async () => {
-		if (typeof navigator.mediaDevices === "undefined") {
+		if (!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)) {
 			document.getElementById("error").innerHTML = "Böngésző nem támogatott";
 			return false;
 		}
 		navigator.mediaDevices.addEventListener("devicechange", listVideo);
+		const oldDeviceId = localStorage.getItem("deviceId");
 		await listVideo();
+		setVideo(oldDeviceId);
 		document.getElementById("cameras").addEventListener("change", (e) => {
-			startVideo(e.target.value);
+			setVideo(e.target.value);
 		});
 		return true;
 	}
