@@ -35,6 +35,14 @@ body {
 	height: 480px;
 }
 
+.video canvas {
+	position: fixed;
+    margin: 10px;
+    z-index: 8;
+    width: 640px;
+    height: 480px;
+}
+
 select {
 	padding: 10px;
 	float: left;
@@ -45,10 +53,6 @@ button {
 	padding: 10px;
 	float: left;
 	margin: 5px 3px 5px 10px;
-}
-
-.removed {
-	display: none;
 }
 
 /* shopping cart */

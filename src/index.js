@@ -111,6 +111,7 @@
 
 	//Video managing
 	let VIDEO;
+	let CANVAS
 	const listVideo = async () => {
 		try {
 			const stream = await navigator.mediaDevices.getUserMedia({
@@ -192,12 +193,53 @@
 		document.getElementById("cameras").addEventListener("change", (e) => {
 			setVideo(e.target.value);
 		});
+
+		CANVAS = document.getElementById("canvas");
 		return true;
 	}
+	const drawCanvas = (name, x, y, width, height) => {
+		var ctx = CANVAS.getContext("2d");
+		ctx.strokeStyle = "color";
+		ctx.fillStyle = "red";
+		ctx.font = "20px Georgia";
+		ctx.fillText(name, x + 10, y + 24);
+
+		ctx.beginPath();
+		ctx.strokeStyle = "red";
+		ctx.lineWidth = 2;
+		ctx.rect(x, y, width, height);
+		ctx.stroke();
+
+		
+	};
+	const clearCanvas = () => {
+		const ctx = CANVAS.getContext("2d");
+		ctx.clearRect(0, 0, CANVAS.width, CANVAS.height);
+	};
+
+	//Object detection
+	let detectionInterval = null;
+	const loadModel = async () => {
+
+	};
+	const detect = () => {
+
+	};
+	const stopDetection = () => {
+		if (detectionInterval !== null) {
+			clearInterval(detectionInterval);
+			detectionInterval = null;
+		}
+	};
+	const startDetection = async () => {
+		await loadModel();
+		detectionInterval = setInterval(detect, 40);
+	};
 
 	//Starting
 	window.addEventListener("load", async () => {
 		await startVideo();
+		await startDetection();
 	});
 };
 
