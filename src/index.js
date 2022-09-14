@@ -209,8 +209,6 @@
 		ctx.lineWidth = 2;
 		ctx.rect(x, y, width, height);
 		ctx.stroke();
-
-		
 	};
 	const clearCanvas = () => {
 		const ctx = CANVAS.getContext("2d");
@@ -219,11 +217,18 @@
 
 	//Object detection
 	let detectionInterval = null;
+	let model = null;
 	const loadModel = async () => {
-
+		model = await cocoSsd.load();
 	};
-	const detect = () => {
-
+	const detect = async () => {
+		const predictions = await model.detect(VIDEO);
+		clearCanvas();
+		console.log('Predictions: ', predictions);
+		for (const iterator of predictions) {
+			drawCanvas(iterator["class"], iterator["bbox"][0], iterator["bbox"][1], iterator["bbox"][2], iterator["bbox"][3]);
+		}
+		
 	};
 	const stopDetection = () => {
 		if (detectionInterval !== null) {
@@ -239,7 +244,9 @@
 	//Starting
 	window.addEventListener("load", async () => {
 		await startVideo();
+		document.getElementById("status").innerHTML = "TF.js betöltése...";
 		await startDetection();
+		document.getElementById("status").innerHTML = "";
 	});
 };
 
