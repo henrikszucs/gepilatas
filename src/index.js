@@ -77,7 +77,6 @@
 			tr.appendChild(td);
 
 			cart[name]["htmlRef"] = tr;
-			console.log();
 			document.getElementById("cart").appendChild(tr);
 		} else {
 			if (count <= 0) {
@@ -111,7 +110,7 @@
 
 	//Video managing
 	let VIDEO;
-	let CANVAS
+	let CANVAS;
 	const listVideo = async () => {
 		try {
 			const stream = await navigator.mediaDevices.getUserMedia({
@@ -216,9 +215,46 @@
 	};
 
 	//Object detection
+	let worker;
+	const loadWorker = async () => {
+		return new Promise((resolve, reject) => {
+			worker = new Worker("worker.js");
+			worker.onmessage = (event) =>{
+				if (event.data === "loaded") {
+					resolve(true);
+				}
+			};
+			worker.postMessage("load");
+		});
+	};
+	const sendWorker = async () => {
+		return new Promise(async (resolve, reject) => {
+			const canvas = document.createElement("canvas");
+			canvas.height = VIDEO.videoHeight;
+			canvas.width = VIDEO.videoWidth;
+			const ctx = canvas.getContext("2d");
+			ctx.drawImage(VIDEO, 0, 0);
+			const imageData = ctx.createImageData(canvas.height, canvas.width);
+			worker.onmessage = (event) =>{
+				if (typeof event.data === "object") {
+					resolve(event.data);
+				}
+			};
+			const data = imageData.data;
+			const width = imageData.width;
+			const height = imageData.height;
+			const colorSpace = imageData.colorSpace;
+			worker.postMessage({
+				"data": data,
+				"width": width,
+				"height": height,
+				"colorSpace": colorSpace
+			}, [data.buffer]);
+		});
+	};
+
 	let detectionInterval = null;
-	let model = null;
-	const OBJECT_NAMES = [
+	const objectNames = [
 		"Kong - energia ital (piros)",
 		"Monster - expresso",
 		"Pilos - kaukázusi kefir",
@@ -228,20 +264,12 @@
 		"Spar - energia ital (lila)",
 		"Tonhal"
 	];
-	const ANCHORS = [0.573, 0.677, 1.87, 2.06, 3.34, 5.47, 7.88, 3.53, 9.77, 9.17];
-	const NEW_OD_OUTPUT_TENSORS = ["detected_boxes", "detected_scores", "detected_classes"];
-	const loadModel = async () => {
-		//model = await cocoSsd.load();
-		model = new cvstfjs.ObjectDetectionModel();
-		await model.loadModelAsync("model/model.json");
-	};
 	const detect = async () => {
-		const predictions = await model.executeAsync(VIDEO);
-
+		const predictions = await sendWorker();
 		clearCanvas();
 		for (let i = 0, length = predictions[0].length; i < length; i++) {
 			if (predictions[1][i] > 0.3) {
-				const itemName = OBJECT_NAMES[predictions[2][i]];
+				const itemName = objectNames[predictions[2][i]];
 				const itemX = (predictions[0][i][0] * CANVAS.width) + 10;
 				const itemY = (predictions[0][i][1] * CANVAS.height) - 10;
 				const itemWidth = (predictions[0][i][2] * CANVAS.width) - itemX + 20;
@@ -249,9 +277,7 @@
 				drawCanvas(itemName, itemX, itemY, itemWidth, itemHeight);
 			}
 		}
-
-		//console.log(predictions);
-		return;
+		console.log(predictions);
 	};
 	const stopDetection = () => {
 		if (detectionInterval !== null) {
@@ -260,18 +286,18 @@
 		}
 	};
 	const startDetection = async () => {
-		await loadModel();
 		detectionInterval = setInterval(detect, 4000);
 	};
-
+	
 	//Starting
 	window.addEventListener("load", async () => {
+		document.getElementById("status").innerHTML = "Videó betöltése...";
 		await startVideo();
 		document.getElementById("status").innerHTML = "TF.js betöltése...";
-		//await startDetection();
-		await loadModel();
-		document.getElementById("detectBtn").addEventListener("click", detect);
+		await loadWorker();
+
 		document.getElementById("status").innerHTML = "";
+		document.getElementById("detectBtn").addEventListener("click", detect);
 	});
 };
 
