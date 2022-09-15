@@ -218,17 +218,40 @@
 	//Object detection
 	let detectionInterval = null;
 	let model = null;
+	const OBJECT_NAMES = [
+		"Kong - energia ital (piros)",
+		"Monster - expresso",
+		"Pilos - kaukázusi kefir",
+		"San Benedetto - ásványvíz",
+		"Snack Day - tortilla (BBQ)",
+		"Snack Day - tortilla (édes chili)",
+		"Spar - energia ital (lila)",
+		"Tonhal"
+	];
+	const ANCHORS = [0.573, 0.677, 1.87, 2.06, 3.34, 5.47, 7.88, 3.53, 9.77, 9.17];
+	const NEW_OD_OUTPUT_TENSORS = ["detected_boxes", "detected_scores", "detected_classes"];
 	const loadModel = async () => {
-		model = await cocoSsd.load();
+		//model = await cocoSsd.load();
+		model = new cvstfjs.ObjectDetectionModel();
+		await model.loadModelAsync("model/model.json");
 	};
 	const detect = async () => {
-		const predictions = await model.detect(VIDEO);
+		const predictions = await model.executeAsync(VIDEO);
+
 		clearCanvas();
-		console.log('Predictions: ', predictions);
-		for (const iterator of predictions) {
-			drawCanvas(iterator["class"], iterator["bbox"][0], iterator["bbox"][1], iterator["bbox"][2], iterator["bbox"][3]);
+		for (let i = 0, length = predictions[0].length; i < length; i++) {
+			if (predictions[1][i] > 0.3) {
+				const itemName = OBJECT_NAMES[predictions[2][i]];
+				const itemX = (predictions[0][i][0] * CANVAS.width) + 10;
+				const itemY = (predictions[0][i][1] * CANVAS.height) - 10;
+				const itemWidth = (predictions[0][i][2] * CANVAS.width) - itemX + 20;
+				const itemHeight = (predictions[0][i][3] * CANVAS.height) - itemY + 10;
+				drawCanvas(itemName, itemX, itemY, itemWidth, itemHeight);
+			}
 		}
-		
+
+		//console.log(predictions);
+		return;
 	};
 	const stopDetection = () => {
 		if (detectionInterval !== null) {
@@ -238,14 +261,16 @@
 	};
 	const startDetection = async () => {
 		await loadModel();
-		detectionInterval = setInterval(detect, 40);
+		detectionInterval = setInterval(detect, 4000);
 	};
 
 	//Starting
 	window.addEventListener("load", async () => {
 		await startVideo();
 		document.getElementById("status").innerHTML = "TF.js betöltése...";
-		await startDetection();
+		//await startDetection();
+		await loadModel();
+		document.getElementById("detectBtn").addEventListener("click", detect);
 		document.getElementById("status").innerHTML = "";
 	});
 };
