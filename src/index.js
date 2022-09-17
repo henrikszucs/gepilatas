@@ -254,6 +254,7 @@
 	};
 
 	let detectionInterval = null;
+	let isWorking = false;
 	const objectNames = [
 		"Kong - energia ital (piros)",
 		"Monster - expresso",
@@ -265,19 +266,23 @@
 		"Tonhal"
 	];
 	const detect = async () => {
-		const predictions = await sendWorker();
-		clearCanvas();
-		for (let i = 0, length = predictions[0].length; i < length; i++) {
-			if (predictions[1][i] > 0.3) {
-				const itemName = objectNames[predictions[2][i]];
-				const itemX = (predictions[0][i][0] * CANVAS.width) + 10;
-				const itemY = (predictions[0][i][1] * CANVAS.height) - 10;
-				const itemWidth = (predictions[0][i][2] * CANVAS.width) - itemX + 20;
-				const itemHeight = (predictions[0][i][3] * CANVAS.height) - itemY + 10;
-				drawCanvas(itemName, itemX, itemY, itemWidth, itemHeight);
+		if (!isWorking) {
+			isWorking = true;
+			const predictions = await sendWorker();
+			isWorking = false;
+			clearCanvas();
+			for (let i = 0, length = predictions[0].length; i < length; i++) {
+				if (predictions[1][i] > 0.3) {
+					const itemName = objectNames[predictions[2][i]];
+					const itemX = (predictions[0][i][0] * CANVAS.width) + 10;
+					const itemY = (predictions[0][i][1] * CANVAS.height) - 10;
+					const itemWidth = (predictions[0][i][2] * CANVAS.width) - itemX + 20;
+					const itemHeight = (predictions[0][i][3] * CANVAS.height) - itemY + 10;
+					drawCanvas(itemName, itemX, itemY, itemWidth, itemHeight);
+				}
 			}
-		}
-		console.log(predictions);
+			console.log(predictions);
+		}	
 	};
 	const stopDetection = () => {
 		if (detectionInterval !== null) {
@@ -285,8 +290,8 @@
 			detectionInterval = null;
 		}
 	};
-	const startDetection = async () => {
-		detectionInterval = setInterval(detect, 4000);
+	const startDetection = () => {
+		detectionInterval = setInterval(detect, 200);
 	};
 	
 	//Starting
@@ -295,6 +300,7 @@
 		await startVideo();
 		document.getElementById("status").innerHTML = "TF.js betöltése...";
 		await loadWorker();
+		startDetection();
 
 		document.getElementById("status").innerHTML = "";
 		document.getElementById("detectBtn").addEventListener("click", detect);
