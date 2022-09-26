@@ -18,6 +18,7 @@ self.addEventListener("message", async (e) => {
         postMessage("loaded");
     } else if (typeof e.data  === "object") {
         const image = new ImageData(e.data["data"], e.data["width"], e.data["height"], {"colorSpace": e.data["colorSpace"]});
+
         const predictions = detect(image);
         postMessage(await predictions);
     }

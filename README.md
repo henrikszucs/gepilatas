@@ -1,6 +1,8 @@
 # gepilatas
 Gépi látás tárgyhoz tartozó repo
 
+Éles demó: [https://zenprog.net/wp-content/uploads/smartcash/index.html](https://zenprog.net/wp-content/uploads/smartcash/index.html)
+
 # Fejlesztői dokumentáció
 ## Kosár függvények
 ### setProduct(name, count, price, unit):

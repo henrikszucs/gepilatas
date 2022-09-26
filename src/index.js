@@ -123,11 +123,18 @@
 			stream.getTracks()[0].stop();
 			const list = await navigator.mediaDevices.enumerateDevices();
 			const cameraEl = document.getElementById("cameras");
+			cameraEl.onchange = (e) => {
+				setVideo(e.target.selectedIndex);
+			};
 			cameraEl.innerHTML = "";
 			const optionNo = document.createElement("option");
-			optionNo.setAttribute("value", "");
+			optionNo.setAttribute("value", "0");
 			optionNo.innerText = "Nincs kamera";
 			cameraEl.appendChild(optionNo);
+			const optionVideo = document.createElement("option");
+			optionVideo.setAttribute("value", "1");
+			optionVideo.innerText = "Videó";
+			cameraEl.appendChild(optionVideo);
 			for (let i = 0, length = list.length; i < length; i++) {
 				if (list[i]["kind"] === "videoinput") {
 					const option = document.createElement("option");
@@ -140,38 +147,43 @@
 					cameraEl.appendChild(option);
 				}
 			}
-			if (cameraEl.childNodes.length > 1) {
-				await setVideo(cameraEl.childNodes[1].value);
+			if (cameraEl.childNodes.length > 2) {
+				await setVideo(2);
 			}
+			
 		} catch (error) {
 			return false;
 		}
 		return true;
 	};
-	const setVideo = async (id) => {
+	const setVideo = async (index) => {
 		const cameras = document.getElementById("cameras");
-		let i = 0, length = cameras.length;
-		while (i < length && cameras.options[i].value === id) {
-			i++;
-		}
-		if (i >= cameras.length) {
+		if (typeof cameras.options[index] === "undefined") {
 			return false;
 		}
-		localStorage.setItem("deviceId", id);
-		cameras.value = id;
-		VIDEO = document.getElementById("webcam");
-		if (VIDEO.srcObject !== null) {
-			VIDEO.srcObject.getTracks()[0].stop();
+		localStorage.setItem("index", index);
+		cameras.value = cameras.options[index].value;
+
+		removeVideo();
+		if (index === 1) {
+			document.getElementById("loadBtn").classList.remove("removed");
+			document.getElementById("playBtn").classList.remove("removed");
+			document.getElementById("pauseBtn").classList.remove("removed");
+		} else {
+			document.getElementById("loadBtn").classList.add("removed");
+			document.getElementById("playBtn").classList.add("removed");
+			document.getElementById("pauseBtn").classList.add("removed");
 		}
-		if (id !== "") {
+
+		if (index > 1) {
 			try {
 				VIDEO.srcObject = await navigator.mediaDevices.getUserMedia({
 					"audio": false,
 					"video": {
-						"deviceId": id,
+						"deviceId": cameras.value,
 						"width": 640,
 						"height": 480
-					  }
+					}
 				});
 			} catch (error) {
 				console.error(error);
@@ -180,18 +192,56 @@
 		}
 		return true;
 	};
+	const setVideoFile = async () => {
+		return new Promise((resolve, reject) => {
+			removeVideo();
+
+			const input = document.createElement("input");
+			input.type = "file";
+			input.accept = "video/*,image/*";
+			input.onchange = async (e) => {
+				VIDEO.src = URL.createObjectURL(e.target.files[0]);
+				VIDEO.load();
+				VIDEO.onloadeddata = () => {
+					VIDEO.play();
+					resolve(true);
+				}
+			};
+			input.click();
+		});
+	};
+	const removeVideo = () => {
+		VIDEO = document.getElementById("webcam");
+		if (VIDEO.srcObject !== null) {
+			VIDEO.srcObject.getTracks().forEach(track => {
+				track.stop()
+				VIDEO.srcObject.removeTrack(track);
+			});
+			VIDEO.srcObject = null;
+		}
+		
+		const ObjectUrl = VIDEO.src;
+		if(ObjectUrl && ObjectUrl.startsWith("blob:")) {
+			URL.revokeObjectURL(ObjectUrl);
+		}
+		VIDEO.src = "";
+	};
 	const startVideo = async () => {
 		if (!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)) {
 			document.getElementById("error").innerHTML = "Böngésző nem támogatott";
 			return false;
 		}
 		navigator.mediaDevices.addEventListener("devicechange", listVideo);
-		const oldDeviceId = localStorage.getItem("deviceId");
+
 		await listVideo();
-		await setVideo(oldDeviceId);
-		document.getElementById("cameras").addEventListener("change", (e) => {
-			setVideo(e.target.value);
+		document.getElementById("loadBtn").addEventListener("click", setVideoFile);
+		document.getElementById("playBtn").addEventListener("click", () => {
+			VIDEO.play();
 		});
+		document.getElementById("pauseBtn").addEventListener("click", () => {
+			VIDEO.pause();
+		});
+		await setVideo(localStorage.getItem("index"));
 
 		CANVAS = document.getElementById("canvas");
 		return true;
@@ -229,27 +279,32 @@
 	};
 	const sendWorker = async () => {
 		return new Promise(async (resolve, reject) => {
-			const canvas = document.createElement("canvas");
-			canvas.height = VIDEO.videoHeight;
-			canvas.width = VIDEO.videoWidth;
-			const ctx = canvas.getContext("2d");
-			ctx.drawImage(VIDEO, 0, 0);
-			const imageData = ctx.createImageData(canvas.height, canvas.width);
-			worker.onmessage = (event) =>{
-				if (typeof event.data === "object") {
-					resolve(event.data);
-				}
-			};
-			const data = imageData.data;
-			const width = imageData.width;
-			const height = imageData.height;
-			const colorSpace = imageData.colorSpace;
-			worker.postMessage({
-				"data": data,
-				"width": width,
-				"height": height,
-				"colorSpace": colorSpace
-			}, [data.buffer]);
+			try {
+				const canvas = document.createElement("canvas");
+				canvas.width = VIDEO.videoWidth;
+				canvas.height = VIDEO.videoHeight;
+				const ctx = canvas.getContext("2d");
+				ctx.drawImage(VIDEO, 0, 0, VIDEO.videoWidth, VIDEO.videoHeight);
+				const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+				worker.onmessage = (event) =>{
+					if (typeof event.data === "object") {
+						resolve(event.data);
+					}
+				};
+				const data = imageData.data;
+				const width = imageData.width;
+				const height = imageData.height;
+				const colorSpace = imageData.colorSpace;
+				worker.postMessage({
+					"data": data,
+					"width": width,
+					"height": height,
+					"colorSpace": colorSpace
+				}, [data.buffer]);
+			} catch (error) {
+				resolve([[]]);
+			}
 		});
 	};
 
@@ -301,9 +356,7 @@
 		document.getElementById("status").innerHTML = "TF.js betöltése...";
 		await loadWorker();
 		startDetection();
-
 		document.getElementById("status").innerHTML = "";
-		document.getElementById("detectBtn").addEventListener("click", detect);
 	});
 };
 
