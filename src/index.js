@@ -19,6 +19,9 @@
 	*/
 	const CURRENCY = "Ft";
 	const cart = {};
+	const listProducts = () => {
+		return Object.keys(cart);
+	};
 	const setProduct = (name, count, price, unit) => {
 		if (typeof name === "undefined" || typeof count === "undefined") {
 			return false;
@@ -66,7 +69,7 @@
 			button.innerText = "-";
 			td.appendChild(button);
 			tr.appendChild(td);
-			//delete
+			//delete btn
 			td = document.createElement("td");
 			button = document.createElement("button");
 			button.onclick = () => {
@@ -106,7 +109,24 @@
 		}
 		setProduct(name, cart[name]["count"] + count);
 		return true;
-	}
+	};
+	const clearCart = () => {
+		const items = Object.keys(cart);
+		for (let i = 0, length = items.length; i < length; i++) {
+			setProduct(items[i], 0);
+		}
+	};
+	const addCart = () => {
+		for (let itemName in VIEWCART) {
+			if (addProduct(itemName, VIEWCART[itemName]["count"]) === false) {
+				setProduct(itemName, VIEWCART[itemName]["count"], VIEWCART[itemName]["price"], VIEWCART[itemName]["unit"]);
+			}
+		}
+	};
+	const setCart = () => {
+		clearCart();
+		addCart();
+	};
 
 	//Video managing
 	let VIDEO;
@@ -265,7 +285,10 @@
 	};
 
 	//Object detection
-	let worker;
+	let worker = null;
+	let detectionInterval = null;
+	let isWorking = false;
+	let VIEWCART = {};
 	const loadWorker = async () => {
 		return new Promise((resolve, reject) => {
 			worker = new Worker("worker.js");
@@ -277,67 +300,58 @@
 			worker.postMessage("load");
 		});
 	};
-	const sendWorker = async () => {
-		return new Promise(async (resolve, reject) => {
-			try {
-				const canvas = document.createElement("canvas");
-				canvas.width = VIDEO.videoWidth;
-				canvas.height = VIDEO.videoHeight;
-				const ctx = canvas.getContext("2d");
-				ctx.drawImage(VIDEO, 0, 0, VIDEO.videoWidth, VIDEO.videoHeight);
-				const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-
-				worker.onmessage = (event) =>{
-					if (typeof event.data === "object") {
-						resolve(event.data);
-					}
-				};
-				const data = imageData.data;
-				const width = imageData.width;
-				const height = imageData.height;
-				const colorSpace = imageData.colorSpace;
-				worker.postMessage({
-					"data": data,
-					"width": width,
-					"height": height,
-					"colorSpace": colorSpace
-				}, [data.buffer]);
-			} catch (error) {
-				resolve([[]]);
-			}
-		});
-	};
-
-	let detectionInterval = null;
-	let isWorking = false;
-	const objectNames = [
-		"Kong - energia ital (piros)",
-		"Monster - expresso",
-		"Pilos - kaukázusi kefir",
-		"San Benedetto - ásványvíz",
-		"Snack Day - tortilla (BBQ)",
-		"Snack Day - tortilla (édes chili)",
-		"Spar - energia ital (lila)",
-		"Tonhal"
-	];
 	const detect = async () => {
-		if (!isWorking) {
-			isWorking = true;
-			const predictions = await sendWorker();
-			isWorking = false;
-			clearCanvas();
-			for (let i = 0, length = predictions[0].length; i < length; i++) {
-				if (predictions[1][i] > 0.3) {
-					const itemName = objectNames[predictions[2][i]];
-					const itemX = (predictions[0][i][0] * CANVAS.width) + 10;
-					const itemY = (predictions[0][i][1] * CANVAS.height) - 10;
-					const itemWidth = (predictions[0][i][2] * CANVAS.width) - itemX + 20;
-					const itemHeight = (predictions[0][i][3] * CANVAS.height) - itemY + 10;
-					drawCanvas(itemName, itemX, itemY, itemWidth, itemHeight);
+			try {
+				if (!isWorking) {
+					isWorking = true;
+
+					const canvas = document.createElement("canvas");
+					canvas.width = CANVAS.width;
+					canvas.height = CANVAS.height;
+					const ctx = canvas.getContext("2d");
+					ctx.drawImage(VIDEO, 0, 0, VIDEO.videoWidth, VIDEO.videoHeight, 0, 0, canvas.width, canvas.height);
+					const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+					const data = imageData.data;
+					const width = imageData.width;
+					const height = imageData.height;
+					const colorSpace = imageData.colorSpace;
+					worker.onmessage = (event) => {
+						if (typeof event.data === "object") {
+							const predictions = event.data;
+							VIEWCART = {};
+							clearCanvas();
+							for (let i = 0, length = predictions.length; i < length; i++) {
+								drawCanvas(predictions[i]["itemName"], predictions[i]["itemX"], predictions[i]["itemY"], predictions[i]["itemWidth"], predictions[i]["itemHeight"]);
+								if (typeof VIEWCART[predictions[i]["itemName"]] === "undefined") {
+									VIEWCART[predictions[i]["itemName"]] = {
+										"count": 1,
+										"price": predictions[i]["itemPrice"],
+										"unit": predictions[i]["itemUnit"]
+									};
+								} else {
+									VIEWCART[predictions[i]["itemName"]]["count"]++;
+								}
+							}
+							console.log(predictions);
+							isWorking = false;
+						}
+					};
+					worker.postMessage({
+						"data": data,
+						"width": width,
+						"height": height,
+						"colorSpace": colorSpace
+					}, [data.buffer]);
 				}
+				
+			} catch (error) {
+				isWorking = false;
+				console.log(error);
 			}
-			console.log(predictions);
-		}	
+		
+	};
+	const startDetection = () => {
+		detectionInterval = setInterval(detect, 200);
 	};
 	const stopDetection = () => {
 		if (detectionInterval !== null) {
@@ -345,12 +359,11 @@
 			detectionInterval = null;
 		}
 	};
-	const startDetection = () => {
-		detectionInterval = setInterval(detect, 200);
-	};
 	
 	//Starting
 	window.addEventListener("load", async () => {
+		document.getElementById("addCartBtn").addEventListener("click", addCart);
+		document.getElementById("setCartBtn").addEventListener("click", setCart);
 		document.getElementById("status").innerHTML = "Videó betöltése...";
 		await startVideo();
 		document.getElementById("status").innerHTML = "TF.js betöltése...";
