@@ -1,7 +1,7 @@
 # gepilatas
 Gépi látás tárgyhoz tartozó repo
 
-Éles demó: [https://zenprog.net/wp-content/uploads/smartcash/index.html](https://zenprog.net/wp-content/uploads/smartcash/index.html)
+Éles demó: [https://henrikszucs.github.io/gepilatas/src/](https://henrikszucs.github.io/gepilatas/src/)
 
 # Mappa struktúra
 | Elérés | Leírás |
