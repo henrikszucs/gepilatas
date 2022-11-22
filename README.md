@@ -6,7 +6,7 @@ Gépi látás tárgyhoz tartozó repo
 # Mappa struktúra
 | Elérés | Leírás |
 | ----------- | ----------- |
-| /Info.docx | Beadandó szövege |
-| /Info.pdf | Beadandó szövege |
+| /Dokumentacio.docx | Beadandó szövege |
+| /Dokumentacio.pdf | Beadandó szövege |
 | /src | program forráskódja |
 | /sample | képi, videós források |
